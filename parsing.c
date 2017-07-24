@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 
     while (1)
     {
-        char *input = readline("lispy> ");
+        char *input = readline("\nlispy> ");
 
         add_history(input);
 
@@ -35,8 +35,9 @@ int main(int argc, char** argv)
         {
             /*On success, print the AST*/
             mpc_ast_print(res.output);
-            long result = eval(res.output);
-            printf("Result : %li", result);
+            lval result = eval(res.output);
+            printf("Result : ");
+            lval_println(result);
             mpc_ast_delete(res.output);
         }
         else

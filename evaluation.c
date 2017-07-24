@@ -1,27 +1,38 @@
 #include "parsing.h"
+#include "lval.c"
 
-long eval_op(long x, char* op, long y) {
+lval eval_op(lval x, char* op, lval y) {
 
-    if(strcmp(op, "+") == 0) {return x+y;}
-    if(strcmp(op, "-") == 0) {return x-y;}
-    if(strcmp(op, "*") == 0) {return x*y;}
-    if(strcmp(op, "/") == 0) {return x/y;}
+    /* Guard for operands */
+    if (x.type == LVAL_ERR) {
+        return x;
+    } 
 
-    return 0;
+    if (y.type == LVAL_ERR) {
+        return y;
+    }
+
+    if(strcmp(op, "+") == 0) {return lval_num(x.num + y.num);}
+    if(strcmp(op, "-") == 0) {return lval_num(x.num - y.num);}
+    if(strcmp(op, "*") == 0) {return lval_num(x.num * y.num);}
+    if(strcmp(op, "/") == 0) {
+        return (y.num == 0) 
+                ? lval_err(LERR_DIV_ZERO) 
+                : lval_num(x.num / y.num);
+    }
+
+    return lval_err(LERR_BAD_OP);
 }
 
-
-long eval(mpc_ast_t* t) {
-    
-    /* If tagged as numbre return it directly. */
-    // if(t) {} else {
-    //     printf("t is nil");
-    //     return -1;
-    // }
+lval eval(mpc_ast_t* t) {
 
     // printf("%s",t->tag);
     if(strstr(t->tag, "number")) {
-        return atoi(t->contents);
+
+        errno = 0;
+        long x = strtol(t->contents, NULL, 10);
+
+        return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
     }
 
     // the operator is always the second child of an ast
@@ -29,7 +40,7 @@ long eval(mpc_ast_t* t) {
     char *op = t->children[1]->contents;
 
     // we store the third child in 'x'
-    long x = eval(t->children[2]);
+    lval x = eval(t->children[2]);
 
     // iterate the remaining children and combining
     int i = 3;
